@@ -1,0 +1,79 @@
+#include <RH_ASK.h>
+#include <SPI.h>
+#include "reciver.hpp"
+#include "motor_functions.h"
+
+// Motor Connections (ENA & ENB must use PWM pins)
+#define IN1 9
+#define IN2 8
+#define IN3 7
+#define IN4 6
+#define ENA 10
+#define ENB 5
+
+// Parametr maksymalnej mocy silników (0.0-1.0)
+// Zmniejsz tę wartość aby ograniczyć maksymalną prędkość
+// #define MAX_MOTOR_POWER 1.0  // Zakres: 0.0-1.0 (1.0 = pełna moc, 0.5 = połowa mocy)
+// #define MAX_MOTOR_POWER 0.8   // 80% mocy  
+// #define MAX_MOTOR_POWER 0.6   // 60% mocy
+// #define MAX_MOTOR_POWER 0.5   // 50% mocy (połowa prędkości)
+#define MAX_MOTOR_POWER 0.3   // 30% mocy (tryb powolny)
+// #define MAX_MOTOR_POWER 0.1   // 10% mocy (tryb bardzo powolny)
+
+// Pin odbiornika RF
+#define RX_PIN 11  // Pin odbioru RF
+
+// Kompensacja różnic w charakterystykach silników
+// Wartość 0 = brak kompensacji, wartość 50 = dodanie 50 do PWM
+#define BONUS_A 0    // Kompensacja dla silnika A (lewy - ENA)
+#define BONUS_B 20   // Kompensacja dla silnika B (prawy - ENB)
+
+// Odbiornik RF - prędkość 2000 bps, RX pin 11, TX pin nie używany (255), PTT pin nie używany (255)
+RH_ASK driver(2000, RX_PIN, 255, 255);
+
+void setup() {
+    Serial.begin(9600);
+    if (!driver.init()) {
+        Serial.println("init failed");
+    }
+    Serial.println("Odbiornik RF gotowy...");
+    Reciver::init(millis());
+    // Wydłuż timeout kontroli, aby rzadziej wpadać w failsafe przy słabym linku
+    // Reciver::setControlTimeout(1500);
+    // Reciver::setPrintInterval(200); // domyślnie 200ms
+    Serial.println("L298N Motor Controller - Start");
+    // Set motor connections as outputs
+    pinMode(IN1, OUTPUT);
+    pinMode(IN2, OUTPUT);
+    pinMode(IN3, OUTPUT);
+    pinMode(IN4, OUTPUT);
+    pinMode(ENA, OUTPUT);
+    pinMode(ENB, OUTPUT);
+
+    // Start with motors off
+    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, LOW);
+    digitalWrite(IN3, LOW);
+    digitalWrite(IN4, LOW);
+
+    analogWrite(ENA, 0);
+    analogWrite(ENB, 0);
+}
+
+// void loop() {
+//     unsigned long now = millis();
+//     Reciver::handleReceive(driver);
+//     Reciver::handleFailsafe(now);
+//     Reciver::handlePeriodicLog(now);
+//     // Aktywne sterowanie motorami
+//     float x, y; int sw; bool fs;
+//     Reciver::getState(x, y, sw, fs);
+//     vectorDriveMotors(x, y);
+// }
+
+void loop() {
+    unsigned long now = millis();
+    Reciver::handleReceive(driver);
+    Reciver::handleFailsafe(now);
+    Reciver::handlePeriodicLog(now);
+}

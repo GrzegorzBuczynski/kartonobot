@@ -1,0 +1,146 @@
+#include <RH_ASK.h>
+#include <SPI.h>
+
+// Pin odbiornika RF
+#define RX_PIN 11  // Pin odbioru RF
+
+// Odbiornik RF - prędkość 2000 bps, RX pin 11, TX pin nie używany (255), PTT pin nie używany (255)
+RH_ASK driver(2000, RX_PIN, 255, 255);
+
+// Stan sterowania + failsafe
+static float xVal = 0.0f;
+static float yVal = 0.0f;
+static int sVal = 1;
+static unsigned long lastUpdateMs = 0;
+static bool inFailsafe = true; // dopóki nie przyjdzie pierwszy pakiet
+const unsigned long CONTROL_TIMEOUT_MS = 500; // po tylu ms bez pakietu przechodzimy w failsafe
+// Nieblo-kujące logowanie co zadany interwał
+static unsigned long lastPrintMs = 0;
+const unsigned long PRINT_INTERVAL_MS = 200;
+
+// Deklaracje funkcji pomocniczych
+static void handleReceive();
+static void handleFailsafe(unsigned long now);
+static void handlePeriodicLog(unsigned long now);
+
+// Funkcja do parsowania odebranych danych
+// Bezpieczna względem braku wsparcia %f w sscanf na AVR – używa prostego tokenizera
+bool parseMessage(const char* message, float* x, float* y, int* sw) {
+    // Domyślne wartości
+    *x = 0.0f;
+    *y = 0.0f;
+    *sw = 1; // 1 = nie wciśnięty (typowy joystick z pull-up)
+
+    // Sprawdź nagłówek
+    if (strncmp(message, "Nadajnik 591", 12) != 0) {
+        return false;
+    }
+
+    // Znajdź pola X, Y, SW w treści
+    const char* px = strstr(message, "X:");
+    const char* py = strstr(message, "Y:");
+    const char* psw = strstr(message, "SW:");
+
+    bool ok = false;
+
+    // Helper do skopiowania tokena do tymczasowego bufora i konwersji
+    auto readToken = [](const char* start, float* outFloat) -> bool {
+        if (!start) return false;
+        start += 2; // pominąć "X:"/"Y:"
+        char tmp[16];
+        size_t i = 0;
+        while (*start && *start != ' ' && i < sizeof(tmp) - 1) {
+            tmp[i++] = *start++;
+        }
+        tmp[i] = '\0';
+        if (i == 0) return false;
+        *outFloat = atof(tmp);
+        return true;
+    };
+
+    auto readTokenInt = [](const char* start, int* outInt) -> bool {
+        if (!start) return false;
+        start += 3; // pominąć "SW:"
+        char tmp[8];
+        size_t i = 0;
+        while (*start && *start != ' ' && i < sizeof(tmp) - 1) {
+            tmp[i++] = *start++;
+        }
+        tmp[i] = '\0';
+        if (i == 0) return false;
+        *outInt = atoi(tmp);
+        return true;
+    };
+
+    if (readToken(px, x)) ok = true;
+    if (readToken(py, y)) ok = true;
+    // SW jest opcjonalne – jeśli brak, pozostaje 1
+    int swTmp;
+    if (readTokenInt(psw, &swTmp)) {
+        *sw = swTmp;
+        ok = true;
+    }
+
+    return ok;
+}
+
+void setup() {
+    Serial.begin(9600);
+    if (!driver.init()) {
+        Serial.println("init failed");
+    }
+    Serial.println("Odbiornik RF gotowy...");
+    lastUpdateMs = millis();
+    lastPrintMs = lastUpdateMs;
+}
+
+void loop() {
+    unsigned long now = millis();
+    handleReceive();
+    handleFailsafe(now);
+    handlePeriodicLog(now);
+}
+
+// Odbiór pakietu RF i aktualizacja stanu, jeśli parsowanie się powiedzie
+static void handleReceive() {
+    uint8_t buf[64];
+    uint8_t buflen = sizeof(buf);
+    if (driver.recv(buf, &buflen)) {
+        if (buflen >= sizeof(buf)) {
+            buflen = sizeof(buf) - 1;
+        }
+        buf[buflen] = '\0';
+
+        float xTmp, yTmp; int sTmp;
+        if (parseMessage((char*)buf, &xTmp, &yTmp, &sTmp)) {
+            xVal = xTmp;
+            yVal = yTmp;
+            sVal = sTmp;
+            lastUpdateMs = millis();
+            if (inFailsafe) inFailsafe = false;
+        }
+    }
+}
+
+// Failsafe uruchamiany po przekroczeniu czasu bez aktualizacji
+static void handleFailsafe(unsigned long now) {
+    if (!inFailsafe && (now - lastUpdateMs > CONTROL_TIMEOUT_MS)) {
+        xVal = 0.0f;
+        yVal = 0.0f;
+        sVal = 1;
+        inFailsafe = true;
+    }
+}
+
+// Nieblokujące logowanie w stałym interwale
+static void handlePeriodicLog(unsigned long now) {
+    if (now - lastPrintMs >= PRINT_INTERVAL_MS) {
+        Serial.print("X: ");
+        Serial.print(xVal, 2);
+        Serial.print(" Y: ");
+        Serial.print(yVal, 2);
+        Serial.print(" SW: ");
+        Serial.println(sVal);
+        lastPrintMs = now;
+    }
+}

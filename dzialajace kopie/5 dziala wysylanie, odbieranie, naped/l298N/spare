@@ -1,0 +1,96 @@
+
+  // // Set motors forward
+  // digitalWrite(IN1, HIGH);
+  // digitalWrite(IN2, LOW);
+  // digitalWrite(IN3, HIGH);
+  // digitalWrite(IN4, LOW);
+
+  // // Accelerate & decelerate both motors forward
+  // motorAccel();
+  // motorDecel();
+
+  // delay(500);
+
+  // Set motors reverse
+  // digitalWrite(IN1, LOW);
+  // digitalWrite(IN2, HIGH);
+  // digitalWrite(IN3, LOW);
+  // digitalWrite(IN4, HIGH);
+
+  // // Accelerate & decelerate both motors backward
+  // motorAccel();
+  // motorDecel();
+
+  // delay(500);
+
+  // // Set motors in opposite directions (full speed)
+  // digitalWrite(IN1, HIGH);
+  // digitalWrite(IN2, LOW);
+  // digitalWrite(IN3, LOW);
+  // digitalWrite(IN4, HIGH);
+
+  // analogWrite(ENA, 255);
+  // analogWrite(ENB, 255);
+
+  // delay(500);
+
+  // analogWrite(ENA, 0);
+  // analogWrite(ENB, 0);
+
+  // delay(500);
+// }
+
+
+
+
+// void stop() {
+//   digitalWrite(IN1, LOW);
+//   digitalWrite(IN2, LOW);
+//   digitalWrite(IN3, LOW);
+//   digitalWrite(IN4, LOW);
+// }
+
+// void spin_right() {
+//   digitalWrite(IN1, HIGH);
+//   digitalWrite(IN2, LOW);
+//   digitalWrite(IN3, LOW);
+//   digitalWrite(IN4, HIGH);
+// }
+
+// void spin_left() {
+//   digitalWrite(IN1, LOW);
+//   digitalWrite(IN2, HIGH);
+//   digitalWrite(IN3, HIGH);
+//   digitalWrite(IN4, LOW);
+// }
+
+// void right() {
+//   digitalWrite(IN1, HIGH);
+//   digitalWrite(IN2, LOW);
+//   digitalWrite(IN3, LOW);
+//   digitalWrite(IN4, LOW);
+// }
+
+// void left() {
+//   digitalWrite(IN1, LOW);
+//   digitalWrite(IN2, LOW);
+//   digitalWrite(IN3, HIGH);
+//   digitalWrite(IN4, LOW);
+// }
+
+
+// void motorAccel() {
+//   for (int i = 0; i < 256; i++) {
+//     analogWrite(ENA, i);
+//     analogWrite(ENB, i);
+//     delay(20);
+//   }
+// }
+
+// void motorDecel() {
+//   for (int i = 255; i >= 0; --i) {
+//     analogWrite(ENA, i);
+//     analogWrite(ENB, i);
+//     delay(20);
+//   }
+// }
