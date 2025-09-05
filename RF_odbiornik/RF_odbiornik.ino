@@ -65,9 +65,9 @@ void loop() {
         parseMessage((char*)buf, data.input.x, data.input.y, data.sw);
         lastReceive = millis();
     }
-    
-    // Reset input to 0 if no message received for 500ms
-    if (millis() - lastReceive > 500) {
+
+    // Reset input to 0 if no message received for 200ms
+    if (millis() - lastReceive > 200) {
         data.input.x = 0.0f;
         data.input.y = 0.0f;
         data.sw = true; // or whatever default

@@ -5,10 +5,11 @@
 
 #define AX  0.8f
 #define MAXPOW 0.3f
-#define DZ 0.2f
+#define DZ 0.15f
 #define MAX_NO_UPDATE_INTERVAL 500
 #define myMin(a,b) ((a)<(b)?(a):(b))
-#define TURNING_FACTOR 0.05f  // 5% difference at max input x
+#define TURNING_FACTOR_LEFT 0.20f  // For left wheel, increased to balance
+#define TURNING_FACTOR_RIGHT 0.15f  // For right wheel, decreased
 
 
 // Motor Connections (ENA & ENB must use PWM pins)
