@@ -1,10 +1,13 @@
 #ifndef MOTOR_FUNCTIONS_H
 #define MOTOR_FUNCTIONS_H
 
+#include "structs.hpp"
 
 #define AX  0.8f
 #define MAXPOW 0.3f
 #define DZ 0.2f
+#define MAX_NO_UPDATE_INTERVAL 500
+#define myMin(a,b) ((a)<(b)?(a):(b))
 
 
 // Motor Connections (ENA & ENB must use PWM pins)
@@ -25,18 +28,19 @@
 #define BONUS_B_FWD 0   // prawy (ENB) podczas jazdy do przodu
 #define BONUS_B_REV 20  // prawy (ENB) podczas jazdy do tyłu (jak wcześniej)
 
-struct State {
-    float x;
-    float y;
-};
+
+#ifdef ARDUINO
+void driveLeftWeel(float speed);
+void driveRightWeel(float speed);
+#endif
 
 // Deklaracje funkcji
-void updateTargets(State input, State target);
-void vectorDriveMotors2(float xSet, float ySet);
-float wheelSpeed(float x, float y);
-inline float myMin(float a, float b);
-float trimMAXPOW(float value);
-void runMotorControl(State& input, State& target, State& current, State& power, unsigned long lastUpdate);
+void updateTargets(Data &data);
+float wheelPower(float x, float y);
+void calculateSoftening(Data &data);
+void limitPowerAxis(float &value);
+void allocatePower(Data &data);
+void powerWheals(float leftSpeed, float rightSpeed);
 
 extern float vl;
 extern float vr;

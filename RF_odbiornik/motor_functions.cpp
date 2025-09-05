@@ -1,11 +1,12 @@
+#include "motor_functions.hpp"
+
+#ifdef ARDUINO
 #include <Arduino.h>
-#include "motor_functions.h"
 
-// Jedyna definicja globalnych prędkości kół
-float vl = 0.0f;
-float vr = 0.0f;
-
-
+void powerWheals(float leftSpeed, float rightSpeed) {
+  driveLeftWeel(leftSpeed);
+  driveRightWeel(rightSpeed);
+}
 
 void driveLeftWeel(float speed) {
   if (speed > DZ) {
@@ -39,127 +40,67 @@ void driveRightWeel(float speed) {
   }
 }
 
-#define FX 0.2f 
-inline float myMin(float a, float b) {
-  return (a < b) ? a : b;
+unsigned long GetTickCount() {
+  return millis();
 }
 
-float trimMAXPOW(float value) {
-  float speed = value;
-  if (speed > DZ) {
-      speed = DZ + (speed - DZ) * MAXPOW;
-  } else if (speed < -DZ) {
-      speed = -DZ + (speed + DZ) * MAXPOW;
-  } else {
-      speed = 0.0f;
+#endif // ARDUINO
+
+// PC: update targets based on input and reset to 0 after inactivity
+void updateTargets(Data &data) {
+  if (data.input.y > DZ || data.input.y < -DZ) {
+    data.target.y = data.input.y;
+    data.target.x = data.input.x;
+    data.lastTargetUpdate = GetTickCount();
   }
-  return speed;
-}
-
-float wheelSpeed(float x, float y) {
-  float speed = 0.0f;
-  if (x >= 0 && y >= 0)
-  {
-    speed = AX * (x + y - 1) + (-x + 0.5 * y + 0.5);
+  else if (data.input.x > DZ || data.input.x < -DZ) {
+    data.target.x = data.input.x;
+    data.lastTargetUpdate = GetTickCount();
   }
-  if (x >= 0 && y < 0) {
-    speed = (1 - AX) * x + (AX - 0.5) * y + (AX - 1.5);
-  } else {
-    speed = y;
+  if (GetTickCount() - data.lastTargetUpdate > MAX_NO_UPDATE_INTERVAL) {
+    data.target.x = 0.0f;
+    data.target.y = 0.0f;
   }
-
-  return speed;
 }
 
-
-
-void vectorDriveMotors2(float x, float y){
-  
-  driveRightWeel(wheelSpeed(x, y));
-  driveLeftWeel(wheelSpeed(-x, y));
-  
-  // Serial.println("vr: " + String(wheelSpeed(x, y)) + ", vl: " + String(wheelSpeed(-x, y)));
-  // driveRightWeel(0);
-  // driveLeftWeel(0);
+// PC: simple easing and power proxy
+void calculateSoftening(Data &data) {
+  static constexpr float MAX_DELTA = 0.05f;
+  // for x
+  float delta_x = data.target.x - data.current.x;
+  if (delta_x > MAX_DELTA) data.current.x += MAX_DELTA;
+  else if (delta_x < -MAX_DELTA) data.current.x -= MAX_DELTA;
+  else data.current.x = data.target.x;
+  // for y
+  float delta_y = data.target.y - data.current.y;
+  if (delta_y > MAX_DELTA) data.current.y += MAX_DELTA;
+  else if (delta_y < -MAX_DELTA) data.current.y -= MAX_DELTA;
+  else data.current.y = data.target.y;
 }
 
-void parseMessage(char* buf) {
-    if (parseMessage((char*)buf, &xVal, &yVal, &sVal)) {
-      updateTargets();
-    } else {
-        // Serial.println("Parse error");
-    }
+// Common for both builds
+void limitPowerAxis(float &value) {
+  if (value > MAXPOW) value = MAXPOW;
+  if (value < -MAXPOW) value = -MAXPOW;
 }
 
-unsigned long GetTick() {
-  if (defined(ARDUINO_ARCH_SAMD) || defined(ARDUINO_ARCH_SAM))
-    return millis();
-  return GetTickCount();
+float wheelPower(float x, float y) {
+  float z; 
+  if (x == 0) x = 0.0;
+  if (x >=  0){
+    if (y >= 0) // Forward-Right
+      z = y - x * MAXPOW;
+    else
+      z = y + x * MAXPOW;
+  }
+  else {
+    z = y;
+  }
+  if (z == 0) z = 0.0;
+  return z;
 }
 
-void updateTargets(State input, State& target, unsigned long& lastUpdate) {
-  if (input.x > DZ || input.x < -DZ)
-    {target.x = input.x;
-    lastUpdate = GetTick();}
-  if (input.y > DZ || input.y < -DZ)
-    {target.y = input.y;
-    lastUpdate = GetTick();}
-}
-
-void updateXY() {
-    if (now - lastXYUpdate > MIN_UPDATE_INTERVAL) {
-        lastXYUpdate = now;
-        if (targetX > x){
-            ax += 1;
-            if (ax < 0)
-                x = -DZ + (ax + 1) * DX;
-            else if (ax == 0)
-                x = 0.0f;
-            else
-                x = DZ + (ax - 1) * DX;
-        }
-        if (targetX < x){
-            ax -= 1;
-            if (ax < 0)
-                x = -DZ + (ax + 1) * DX;
-            else if (ax == 0)
-                x = 0.0f;
-            else
-                x = DZ + (ax - 1) * DX;
-        }
-        if (targetY > y){
-            ay += 1;
-            if (ay < 0)
-                y = -DZ + (ay + 1) * DY;
-            else if (ay == 0)
-                y = 0.0f;
-            else
-                y = DZ + (ay - 1) * DY;
-        }
-        if (targetY < y) {
-            ay -= 1;
-            if (ay < 0)
-                y = -DZ + (ay + 1) * DY;
-            else if (ay == 0)
-                y = 0.0f;
-            else
-                y = DZ + (ay - 1) * DY;
-        }
-        if (x > 1.0f)
-            x = 1.0f;
-        if (x < -1.0f)
-            x = -1.0f;
-        if (y > 1.0f)
-            y = 1.0f;
-        if (y < -1.0f)
-            y = -1.0f;
-    }
-}
-
-
-void runMotorControl(State& input, State& target, State& current, State& power, unsigned long lastUpdate) {
-    updateTargets(input, target, lastUpdate);
-    updateXY(current, target);
-    updateMotorPower(current, power);
-    applyMotorControl(power);
+void allocatePower(Data &data){
+    data.power.x = wheelPower(-data.current.x, data.current.y);
+    data.power.y = wheelPower(data.current.x, data.current.y);
 }
