@@ -46,6 +46,22 @@ unsigned long GetTickCount() {
 
 #endif // ARDUINO
 
+float wheelPower(float x, float y) {
+  float z; 
+  if (x == 0) x = 0.0;
+  if (x >=  0){
+    if (y >= 0) // Forward-Right
+      z = y - x * TURNING_FACTOR;
+    else
+      z = y + x * TURNING_FACTOR;
+  }
+  else {
+    z = y;
+  }
+  if (z == 0) z = 0.0;
+  return z;
+}
+
 // PC: update targets based on input and reset to 0 after inactivity
 void updateTargets(Data &data) {
   if (data.input.y > DZ || data.input.y < -DZ) {
@@ -65,16 +81,17 @@ void updateTargets(Data &data) {
 
 // PC: simple easing and power proxy
 void calculateSoftening(Data &data) {
-  static constexpr float MAX_DELTA = 0.05f;
+  static constexpr float MAX_DELTA_X = 0.4f;  // Increased for faster x response
   // for x
   float delta_x = data.target.x - data.current.x;
-  if (delta_x > MAX_DELTA) data.current.x += MAX_DELTA;
-  else if (delta_x < -MAX_DELTA) data.current.x -= MAX_DELTA;
+  if (delta_x > MAX_DELTA_X) data.current.x += MAX_DELTA_X;
+  else if (delta_x < -MAX_DELTA_X) data.current.x -= MAX_DELTA_X;
   else data.current.x = data.target.x;
-  // for y
+  // for y - less reactive at higher speeds
+  float max_delta_y = 0.2f / (1.0f + abs(data.current.y) * 2.0f);  // Increased base
   float delta_y = data.target.y - data.current.y;
-  if (delta_y > MAX_DELTA) data.current.y += MAX_DELTA;
-  else if (delta_y < -MAX_DELTA) data.current.y -= MAX_DELTA;
+  if (delta_y > max_delta_y) data.current.y += max_delta_y;
+  else if (delta_y < -max_delta_y) data.current.y -= max_delta_y;
   else data.current.y = data.target.y;
 }
 
@@ -82,22 +99,6 @@ void calculateSoftening(Data &data) {
 void limitPowerAxis(float &value) {
   if (value > MAXPOW) value = MAXPOW;
   if (value < -MAXPOW) value = -MAXPOW;
-}
-
-float wheelPower(float x, float y) {
-  float z; 
-  if (x == 0) x = 0.0;
-  if (x >=  0){
-    if (y >= 0) // Forward-Right
-      z = y - x * MAXPOW;
-    else
-      z = y + x * MAXPOW;
-  }
-  else {
-    z = y;
-  }
-  if (z == 0) z = 0.0;
-  return z;
 }
 
 void allocatePower(Data &data){

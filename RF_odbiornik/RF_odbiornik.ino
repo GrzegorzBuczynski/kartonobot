@@ -19,6 +19,7 @@
 // Odbiornik RF - prędkość 2000 bps, RX pin 11, TX pin nie używany (255), PTT pin nie używany (255)
 RH_ASK driver(2000, RX_PIN, 255, 255);
 Data data{};
+unsigned long lastReceive = 0;
 
 
 void setup() {
@@ -45,6 +46,7 @@ void setup() {
     analogWrite(ENA, 0);
     analogWrite(ENB, 0);
     initData(data);
+    lastReceive = millis();
 }
 
 
@@ -61,10 +63,39 @@ void loop() {
         }
         buf[buflen] = '\0';          // zakończenie stringa
         parseMessage((char*)buf, data.input.x, data.input.y, data.sw);
+        lastReceive = millis();
     }
+    
+    // Reset input to 0 if no message received for 500ms
+    if (millis() - lastReceive > 500) {
+        data.input.x = 0.0f;
+        data.input.y = 0.0f;
+        data.sw = true; // or whatever default
+    }
+    
     updateTargets(data);
     limitPowerAxis(data.target.y);
     calculateSoftening(data);
     allocatePower(data);
     powerWheals(data.power.x, data.power.y);
+    
+    // Logowanie parametrów
+    Serial.print("Input: X=");
+    Serial.print(data.input.x);
+    Serial.print(" Y=");
+    Serial.print(data.input.y);
+    Serial.print(" SW=");
+    Serial.print(data.sw);
+    Serial.print(" | Target: X=");
+    Serial.print(data.target.x);
+    Serial.print(" Y=");
+    Serial.print(data.target.y);
+    Serial.print(" | Current: X=");
+    Serial.print(data.current.x);
+    Serial.print(" Y=");
+    Serial.print(data.current.y);
+    Serial.print(" | Power: X=");
+    Serial.print(data.power.x);
+    Serial.print(" Y=");
+    Serial.println(data.power.y);
 }

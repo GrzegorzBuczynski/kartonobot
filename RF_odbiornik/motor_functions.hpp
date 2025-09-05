@@ -8,6 +8,7 @@
 #define DZ 0.2f
 #define MAX_NO_UPDATE_INTERVAL 500
 #define myMin(a,b) ((a)<(b)?(a):(b))
+#define TURNING_FACTOR 0.05f  // 5% difference at max input x
 
 
 // Motor Connections (ENA & ENB must use PWM pins)
@@ -25,7 +26,7 @@
 // Domyślnie zachowujemy poprzednie 20 tylko dla prawego silnika przy jeździe wstecz.
 #define BONUS_A_FWD 10  // lewy (ENA) podczas jazdy do przodu – skoryguj dryf w lewo
 #define BONUS_A_REV 0   // lewy (ENA) podczas jazdy do tyłu
-#define BONUS_B_FWD 0   // prawy (ENB) podczas jazdy do przodu
+#define BONUS_B_FWD 10  // prawy (ENB) podczas jazdy do przodu - increased to balance left pull
 #define BONUS_B_REV 20  // prawy (ENB) podczas jazdy do tyłu (jak wcześniej)
 
 
