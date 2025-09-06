@@ -1,5 +1,9 @@
 #include "motor_functions.hpp"
 
+float my_abs(float x) {
+    return x < 0.0f ? -x : x;
+}
+
 #ifdef ARDUINO
 #include <Arduino.h>
 
@@ -73,7 +77,7 @@ void calculateSoftening(Data &data) {
   // else 
   data.current.x = data.target.x;
   // for y - less reactive at higher speeds
-  float max_delta_y = 0.2f / (1.0f + abs(data.current.y) * 2.0f);  // Increased base
+  float max_delta_y = 0.2f / (1.0f + my_abs(data.current.y) * 2.0f);  // Increased base
   float delta_y = data.target.y - data.current.y;
   if (delta_y > max_delta_y) data.current.y += max_delta_y;
   else if (delta_y < -max_delta_y) data.current.y -= max_delta_y;
@@ -82,35 +86,61 @@ void calculateSoftening(Data &data) {
 
 float wheelPowerLeft(float x, float y) {
   float z; 
+
   if (x == 0) x = 0.0;
+  // float ax = -1.456798 + (1 - -1.456798)/(1 + pow((y/1.103811), 7.528099))+ 0.2;
+  // float ax = -760074.7 + (0.9832712 - -760074.7)/(1 + pow((y/5.140897), 8.30364));
+  // float ax = -498323.2 + (2.999385 - -498323.2)/(1 + pow((y/3.437171), 9.755454)); //odwraca przy y = 0.7
+  float ax;
   if (x >=  0){
-    if (y >= 0) // Forward-Left
-      z = y - x * TURNING_FACTOR_LEFT;
-    else
-      z = y + x * TURNING_FACTOR_LEFT;
+    if (y >= 0) {// Forward-Right
+      ax = 1 / (y + 2);
+      z = y - x * MAXPOW * ax + (MAXPOW * 0.4 * (1 - y)) * x;
+    }
+    else{
+      ax = -1 / (y - 2);
+      z = y + x * MAXPOW * ax - (MAXPOW * 0.4 * (1 + y)) * x;
+    }
   }
   else {
     z = y;
   }
   if (z == 0) z = 0.0;
+  if (z == 0) z = 0.0;
+  if (z > 1.0) z = 1.0;
+  if (z < -1.0) z = -1.0;
   return z;
 }
 
 float wheelPowerRight(float x, float y) {
   float z; 
+
   if (x == 0) x = 0.0;
+  // float ax = -1.456798 + (1 - -1.456798)/(1 + pow((y/1.103811), 7.528099))+ 0.2;
+  // float ax = -760074.7 + (0.9832712 - -760074.7)/(1 + pow((y/5.140897), 8.30364));
+  // float ax = -498323.2 + (2.999385 - -498323.2)/(1 + pow((y/3.437171), 9.755454)); //odwraca przy y = 0.7
+  float ax;
   if (x >=  0){
-    if (y >= 0) // Forward-Right
-      z = y - x * TURNING_FACTOR_RIGHT;
-    else
-      z = y + x * TURNING_FACTOR_RIGHT;
+    if (y >= 0) {// Forward-Right
+      ax = 1 / (y + 1.65); //<-- changed from 2 to 1.65 to make turning more responsive
+      z = y - x * MAXPOW * ax + (MAXPOW * 0.4 * (1 - y)) * x;
+    }
+    else{
+      ax = 1 / (y - 1.5); //<-- changed from -2 to -1.5 to make turning more responsive
+      z = y - x * MAXPOW * ax - (MAXPOW * 0.4 * (1 + y)) * x;
+    }
   }
   else {
     z = y;
   }
   if (z == 0) z = 0.0;
+  if (z == 0) z = 0.0;
+  if (z > 1.0) z = 1.0;
+  if (z < -1.0) z = -1.0;
   return z;
 }
+
+
 
 // Common for both builds
 void limitPowerAxis(float &value) {

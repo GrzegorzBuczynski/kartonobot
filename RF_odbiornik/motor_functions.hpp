@@ -9,7 +9,7 @@
 #define MAX_NO_UPDATE_INTERVAL 500
 #define myMin(a,b) ((a)<(b)?(a):(b))
 #define TURNING_FACTOR_LEFT 0.20f  // For left wheel, increased to balance
-#define TURNING_FACTOR_RIGHT 0.15f  // For right wheel, decreased
+#define TURNING_FACTOR_RIGHT 0.9f  // For right wheel, decreased
 
 
 // Motor Connections (ENA & ENB must use PWM pins)
@@ -43,6 +43,8 @@ void calculateSoftening(Data &data);
 void limitPowerAxis(float &value);
 void allocatePower(Data &data);
 void powerWheals(float leftSpeed, float rightSpeed);
+float wheelPowerLeft(float x, float y);
+float wheelPowerRight(float x, float y);
 
 extern float vl;
 extern float vr;
