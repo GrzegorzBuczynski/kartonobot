@@ -13,7 +13,7 @@ void printStatus(const Data& data) {
               << "Input: X: " << std::setw(4) << data.input.x << " Y: " << std::setw(4) << data.input.y << " | "
               << "Target: X: " << std::setw(4) << data.target.x << " Y: " << std::setw(4) << data.target.y << " | "
               << "Current: X: " << std::setw(4) << data.current.x << " Y: " << std::setw(4) << data.current.y << " | "
-              << "Power: Left X: " << std::setprecision(2) << std::setw(6) << data.power.x << " Right Y: " << std::setw(6) << data.power.y << std::setprecision(1)
+              << "Power: Left X: " << std::setw(4) << data.power.x << " Right Y: " << std::setw(4) << data.power.y
               << "      "
               << std::flush;
 }

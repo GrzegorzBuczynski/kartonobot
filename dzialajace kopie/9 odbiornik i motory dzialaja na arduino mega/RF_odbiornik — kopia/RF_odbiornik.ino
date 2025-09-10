@@ -8,7 +8,7 @@
 // Pin odbiornika RF
 #define RX_PIN 11  // Pin odbioru RF
 #define MIN_UPDATE_INTERVAL 100
-// #define DZ 0.02f
+#define DZ 0.02f
 #define DX 0.01f
 #define DY 0.01f
 

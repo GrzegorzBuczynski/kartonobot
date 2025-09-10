@@ -16,7 +16,6 @@ struct Data {
     State power;
     int delayMs;
     unsigned long lastUpdate;
-    unsigned long lastCurrentUpdate;
     unsigned long lastTargetUpdate;
     bool sw; // stan przycisku (1 = nie wciśnięty, 0 = wciśnięty)
 };
